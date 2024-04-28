@@ -1,4 +1,4 @@
-package dev.limjustin.testdevelopment;
+package dev.limjustin.testdev;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
