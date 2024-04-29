@@ -34,9 +34,7 @@ public class User {
         this.pays = new ArrayList<>();
     }
 
-    public void addPay(Pay pay) throws RuntimeException {
-        if (pays.size() == 3)
-            throw new RuntimeException();
+    public void addPay(Pay pay) {
         this.pays.add(pay);
     }
 

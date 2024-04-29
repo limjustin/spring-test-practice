@@ -21,8 +21,6 @@ class UserServiceTest {
     @Mock
     private UserRepository userRepository;
 
-    private User user;
-
     @BeforeEach
     void setUp() {
     }
@@ -30,6 +28,12 @@ class UserServiceTest {
     @AfterEach
     void tearDown() {
     }
+
+    /**
+     * 테스트 케이스 정리
+     * [v] 사용자 등록 : 정상
+     * [v] 사용자 등록 : 예외 - 닉네임 길이 제한 초과
+     */
 
     @Test
     @DisplayName("사용자 등록 : 정상")
@@ -59,43 +63,8 @@ class UserServiceTest {
         assertThrows(IllegalArgumentException.class, () -> userService.join(user));
     }
 
-    @Test
-    @DisplayName("페이 등록 : 정상")
-    void givenUser_whenAddPay_thenPayLengthIncrease() {
-        // given
-        String userName = "Jaeyoung";
-        String userNickname = "Jayce";
-        User user = createUser(userName, userNickname);
-
-        // when
-        Pay myPay1 = createPay(user, "My_Pay_1");
-        user.addPay(myPay1);
-
-        // then
-        assertEquals(user.getPayLength(), 1);
-    }
-
-    @Test
-    @DisplayName("페이 등록 : 예외 - 최대 보유 개수 초과")
-    void givenUserAddPayThreeTimes_whenAddPay_thenThrowException() {
-        // given
-        String userName = "Jaeyoung";
-        String userNickname = "Jayce";
-        User user = createUser(userName, userNickname);
-
-        Pay myPay1 = createPay(user, "My_Pay_1");
-        Pay myPay2 = createPay(user, "My_Pay_2");
-        Pay myPay3 = createPay(user, "My_Pay_3");
-        user.addPay(myPay1);
-        user.addPay(myPay2);
-        user.addPay(myPay3);
-
-        // when
-        Pay myPay4 = createPay(user, "My_Pay_4");
-
-        // then
-        assertThrows(RuntimeException.class, () -> user.addPay(myPay4));
-    }
+    // 페이 리스트 불러오는 작업도 필요
+    // 아 물론 그 전에 User, Pay 어떻게 분리할지 생각해보기
 
     @Test
     @DisplayName("페이 제거 : 정상")
@@ -232,14 +201,14 @@ class UserServiceTest {
         assertThrows(IllegalArgumentException.class, () -> myPay1.pay(payPrice));
     }
 
-    public User createUser(String name, String nickname) {
+    private User createUser(String name, String nickname) {
         return User.builder()
                 .name(name)
                 .nickname(nickname)
                 .build();
     }
 
-    public Pay createPay(User user, String alias) {
+    private Pay createPay(User user, String alias) {
         return Pay.builder()
                 .user(user)
                 .alias(alias)
