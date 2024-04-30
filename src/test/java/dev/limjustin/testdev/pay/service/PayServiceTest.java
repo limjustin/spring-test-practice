@@ -47,13 +47,10 @@ class PayServiceTest {
      * [v] 페이 조회 : 사용자가 등록한 페이 불러오기
      * [v] 페이 등록 : 정상
      * [v] 페이 등록 : 예외 - 최대 보유 개수 초과
-     * [ ] 페이 제거 : 정상
-     * [ ] 페이 제거 : 예외 - 페이가 0개일 때는 제거 불가
-     * [ ] 페이 충전 : 정상
-     * [ ] 페이 충전 : 예외 - 충전 금액은 무조건 양수
-     * [ ] 페이 결제 : 정상
-     * [ ] 페이 결제 : 예외 - 충전 금액은 무조건 양수
-     * [ ] 페이 결제 : 예외 - 잔고 부족
+     * [v] 페이 제거 : 정상
+     * [v] 페이 제거 : 예외 - 페이가 0개일 때는 제거 불가
+     * [v] 페이 충전 : 정상
+     * [v] 페이 충전 : 예외 - 충전 금액은 무조건 양수
      */
 
     @Test
@@ -109,6 +106,62 @@ class PayServiceTest {
 
         // then
         assertThrows(RuntimeException.class, () -> payService.createPay(1L, payAlias4));
+    }
+
+    @Test
+    @DisplayName("페이 제거 : 정상")
+    void givenUserAddPay_whenRemovePay_thenUserPayLengthDecrease() {
+        // given
+        Mockito.when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        String payAlias = "My_Pay_1";
+        Pay myPay1 = payService.createPay(1L, payAlias);
+
+        Mockito.when(payRepository.findById(10L)).thenReturn(Optional.of(myPay1));
+
+        // when
+        payService.removePay(1L, 10L);
+
+        // then
+        assertEquals(user.getPayLength(), 0);
+    }
+
+    @Test
+    @DisplayName("페이 제거 : 예외 - 페이가 0개일 때는 제거 불가")
+    void givenUserNoPay_whenRemovePay_thenThrowException() {
+        // given
+        Mockito.when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        // then
+        assertThrows(RuntimeException.class, () -> payService.removePay(1L, 10L));
+    }
+
+    @Test
+    @DisplayName("페이 충전 : 정상")
+    void givenUserAddPay_whenChargePay_thenReturnPayAndBalanceIncrease() {
+        // given
+        Mockito.when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        String payAlias = "My_Pay_1";
+        Pay myPay1 = payService.createPay(1L, payAlias);
+        int currentBalance = myPay1.getBalance();
+
+        Mockito.when(payRepository.findById(10L)).thenReturn(Optional.of(myPay1));
+
+        // when
+        int chargePrice = 10000;
+        Pay pay = payService.chargePay(10L, chargePrice);
+
+        // then
+        assertEquals(pay.getBalance(), currentBalance + chargePrice);
+    }
+
+    @Test
+    @DisplayName("페이 충전 : 예외 - 충전 금액은 무조건 양수")
+    void given_whenNegativeChargePrice_thenThrowException() {
+        // when
+        int chargePrice = -10000;
+
+        // then
+        assertThrows(RuntimeException.class, () -> payService.chargePay(10L, chargePrice));
     }
 
     private static User createUser(String name, String nickname) {

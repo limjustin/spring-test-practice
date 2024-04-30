@@ -5,10 +5,7 @@ import dev.limjustin.testdev.book.domain.BookRepository;
 import dev.limjustin.testdev.pay.domain.Pay;
 import dev.limjustin.testdev.pay.domain.PayRepository;
 import dev.limjustin.testdev.user.domain.User;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -32,7 +29,16 @@ class BookServiceTest {
     @Mock
     private PayRepository payRepository;
 
+    private User user;
+
     private static final List<Book> testBooks = new ArrayList<>();
+
+    @BeforeEach
+    void setup() {
+        String userName = "Jaeyoung";
+        String userNickname = "Jayce";
+        user = createUser(userName, userNickname);
+    }
 
     @BeforeAll
     static void setUp() {
@@ -64,21 +70,14 @@ class BookServiceTest {
 
     /**
      * 테스트 케이스 정리
-     * 1. [v] 책 불러오기 (findById or findAll)
-     * 2. [ ] 책 구매 - 정상 (반드시 수량도 체크!!)
-     * 3. [v] 책 구매 - 페이 잔액 부족
-     * 4. [v] 책 구매 - 책 재고 부족
+     * 1. [v] 책 조회 : 정상
+     * 2. [v] 책 구매 : 정상
+     * 3. [v] 책 구매 : 예외 - 페이 잔액 부족
+     * 4. [v] 책 구매 : 예외 - 책 재고 부족
      */
 
-    // 근데 단위 테스트
-    // 여기 직접 구현하는게 단위 테스트야
-    // 아니면 서비스 클래스에 있는 메서드를 불러오는게 단위 테스트야 (안에 있는 것들 mock 처리 해야지)
-
-    // 후자 같은데
-    // 일단 전자처럼 구현해보고 코드 틀 짰다면 그대로 서비스 코드에 넣는게 TDD 인듯
-
     @Test
-    @DisplayName("책 목록 조회")
+    @DisplayName("책 조회 : 정상")
     void givenBooksInDatabase_whenFindAllBooks_thenReturnAllBooksInDatabase() {
         // given
         Mockito.when(bookRepository.findAll()).thenReturn(testBooks);
@@ -94,9 +93,6 @@ class BookServiceTest {
     @DisplayName("책 구매 : 정상 - Map 형태 input")
     void givenOrderMap_whenBuyBooks_thenReturnReceipt() {
         // given
-        String userName = "Jaeyoung";
-        String userNickname = "Jayce";
-        User user = createUser(userName, userNickname);
         Pay myPay1 = createPay(user, "My_Pay_1");
 
         Map<Long, Integer> orderMap = new HashMap<>();
@@ -115,8 +111,6 @@ class BookServiceTest {
         myPay1.charge(100000);
         int sumOfPrice = bookService.buy(1L, orderMap);
 
-        // 수량 체크는 어디에?
-
         // then
         assertEquals(sumOfPrice, sumOfActual);
     }
@@ -125,15 +119,13 @@ class BookServiceTest {
     @DisplayName("책 구매 : 예외 - 페이 잔액 부족")
     void given_when_thenThrowException() {
         // given
-        String userName = "Jaeyoung";
-        String userNickname = "Jayce";
-        User user = createUser(userName, userNickname);
         Pay myPay1 = createPay(user, "My_Pay_1");
 
         Map<Long, Integer> orderMap = new HashMap<>();
         orderMap.put(1L, 1);
         // orderMap.put(2L, 1);
         // orderMap.put(3L, 2);
+        // -> 이유 : 이미 첫 번째에 걸렸으니까 뒤에 것들은 필요 없는 것임 (불필요한 mock)
 
         Mockito.when(payRepository.findById(1L)).thenReturn(Optional.of(myPay1));
         Mockito.when(bookRepository.findById(1L)).thenReturn(Optional.of(testBooks.get(0)));
@@ -152,9 +144,6 @@ class BookServiceTest {
     @DisplayName("책 구매 : 예외 - 책 재고 부족")
     void given_when__thenThrowException() {
         // given
-        String userName = "Jaeyoung";
-        String userNickname = "Jayce";
-        User user = createUser(userName, userNickname);
         Pay myPay1 = createPay(user, "My_Pay_1");
         myPay1.charge(100000);
 
@@ -162,6 +151,7 @@ class BookServiceTest {
         orderMap.put(1L, 2);
         // orderMap.put(2L, 1);
         // orderMap.put(3L, 2);
+        // -> 이유 : 이미 첫 번째에 걸렸으니까 뒤에 것들은 필요 없는 것임 (불필요한 mock)
 
         Mockito.when(payRepository.findById(1L)).thenReturn(Optional.of(myPay1));
         Mockito.when(bookRepository.findById(1L)).thenReturn(Optional.of(testBooks.get(0)));

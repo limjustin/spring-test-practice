@@ -39,8 +39,6 @@ public class User {
     }
 
     public void removePay(Pay pay) {
-        if (pays.isEmpty())
-            throw new RuntimeException();
         this.pays.remove(pay);
     }
 
