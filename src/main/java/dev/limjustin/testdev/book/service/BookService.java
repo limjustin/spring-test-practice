@@ -36,17 +36,17 @@ public class BookService {
             int localSumPrice = book.getPrice() * orderMap.get(id);
 
             if (book.getQuantity() - orderMap.get(id) < 0)
-                throw new RuntimeException("No Quantity available");
+                throw new RuntimeException("No Quantity available");  // 책의 재고를 넘어선 경우 예외 발생
 
             if (localSumPrice > account.getBalance())  // 부분일 때도 발견할 수 있도록 함 -> 어차피 전체 때도 걸리니까
-                throw new RuntimeException("Lack of balance");
+                throw new RuntimeException("Lack of balance");  // 잔고가 부족한 경우 예외 발생
 
             sumPrice += localSumPrice;
             book.minusQuantity(orderMap.get(id));
         }
 
         if (sumPrice > account.getBalance())
-            throw new RuntimeException("Lack of balance");
+            throw new RuntimeException("Lack of balance");  // 잔고가 부족한 경우 예외 발생
 
         account.pay(sumPrice);
         return sumPrice;

@@ -70,96 +70,99 @@ class BookServiceTest {
 
     /**
      * 테스트 케이스 정리
-     * 1. [v] 책 조회 : 정상
-     * 2. [v] 책 구매 : 정상
-     * 3. [v] 책 구매 : 예외 - 페이 잔액 부족
-     * 4. [v] 책 구매 : 예외 - 책 재고 부족
+     * [v] 도서 조회 : 정상
+     * [v] 도서 구매 : 정상
+     * [v] 도서 구매 : 예외 - 페이 잔액 부족
+     * [v] 도서 구매 : 예외 - 책 재고 부족
      */
 
     @Test
-    @DisplayName("책 조회 : 정상")
+    @DisplayName("도서 조회 : 정상")
     void givenBooksInDatabase_whenFindAllBooks_thenReturnAllBooksInDatabase() {
-        // given
+        // given (서비스 코드 메서드 내에 필요한 stub 정의)
         Mockito.when(bookRepository.findAll()).thenReturn(testBooks);
 
-        // when
+        // when (코드 실행 후 나온 결과 반환)
         List<Book> servicesBooks = bookService.findAllBooks();
 
-        // then
+        // then (결과 값과 테스트 코드에서 정의한 값이 같은지 확인)
         assertEquals(servicesBooks.size(), testBooks.size());
     }
 
     @Test
-    @DisplayName("책 구매 : 정상 - Map 형태 input")
+    @DisplayName("도서 구매 : 정상 - Map 형태 input")
     void givenOrderMap_whenBuyBooks_thenReturnReceipt() {
-        // given
-        Pay myPay1 = createPay(user, "My_Pay_1");
-
+        // given (주문 Map 객체 생성)
         Map<Long, Integer> orderMap = new HashMap<>();
         orderMap.put(1L, 1);
         orderMap.put(2L, 1);
         orderMap.put(3L, 2);
 
+        // 서비스 코드 메서드 내에 필요한 stub 정의
+        Pay myPay1 = createPay(user, "My_Pay_1");
         Mockito.when(payRepository.findById(1L)).thenReturn(Optional.of(myPay1));
         Mockito.when(bookRepository.findById(1L)).thenReturn(Optional.of(testBooks.get(0)));
         Mockito.when(bookRepository.findById(2L)).thenReturn(Optional.of(testBooks.get(1)));
         Mockito.when(bookRepository.findById(3L)).thenReturn(Optional.of(testBooks.get(2)));
 
+        // 실제 가격 정의
         int sumOfActual = 80000;
 
-        // when
+        // when (10만원을 충전하고 이를 통해 구매를 진행하였을 때 총 구매한 금액 반환)
         myPay1.charge(100000);
         int sumOfPrice = bookService.buy(1L, orderMap);
 
-        // then
+        // then (결과 값의 금액과 실제 가격이 동일한지 확인)
         assertEquals(sumOfPrice, sumOfActual);
     }
 
     @Test
-    @DisplayName("책 구매 : 예외 - 페이 잔액 부족")
-    void given_when_thenThrowException() {
-        // given
-        Pay myPay1 = createPay(user, "My_Pay_1");
-
+    @DisplayName("도서 구매 : 예외 - 페이 잔액 부족")
+    void givenOrderMap_whenBuyBookWithNotEnoughCharge_thenThrowException() {
+        // given (주문 Map 객체 생성)
         Map<Long, Integer> orderMap = new HashMap<>();
         orderMap.put(1L, 1);
-        // orderMap.put(2L, 1);
-        // orderMap.put(3L, 2);
-        // -> 이유 : 이미 첫 번째에 걸렸으니까 뒤에 것들은 필요 없는 것임 (불필요한 mock)
+//        orderMap.put(2L, 1);
+//        orderMap.put(3L, 2);
+        // -> 주석 제외하고 돌려보기
 
+        Pay myPay1 = createPay(user, "My_Pay_1");
         Mockito.when(payRepository.findById(1L)).thenReturn(Optional.of(myPay1));
-        Mockito.when(bookRepository.findById(1L)).thenReturn(Optional.of(testBooks.get(0)));
-        // Mockito.when(bookRepository.findById(2L)).thenReturn(Optional.of(testBooks.get(1)));
-        // Mockito.when(bookRepository.findById(3L)).thenReturn(Optional.of(testBooks.get(2)));
-        // -> 이유 : 이미 첫 번째에 걸렸으니까 뒤에 것들은 필요 없는 것임 (불필요한 mock)
+        Mockito.when(bookRepository.findById(1L)).thenReturn(Optional.of(testBooks.get(0)));  // 첫 번째 책
+//        Mockito.when(bookRepository.findById(2L)).thenReturn(Optional.of(testBooks.get(1)));
+//        Mockito.when(bookRepository.findById(3L)).thenReturn(Optional.of(testBooks.get(2)));
+        // -> 주석 제외하고 돌려보기
+        // Exception 발생 : 이미 첫 번째 책에서 예외 처리 발생 -> 따라서 뒤에 것들은 필요 없는 것임 (불필요한 mock)
 
-        // when
+        // when (주문할 책보다 부족한 금액으로 충전)
         myPay1.charge(500);
 
-        // then
+        // then (주문할 책보다 현재 잔고가 부족하니 예외 발생)
         assertThrows(RuntimeException.class, () -> bookService.buy(1L, orderMap));
     }
 
     @Test
-    @DisplayName("책 구매 : 예외 - 책 재고 부족")
-    void given_when__thenThrowException() {
-        // given
+    @DisplayName("도서 구매 : 예외 - 책 재고 부족")
+    void givenOrderMap_whenBookQuantityIsLack_thenThrowException() {
+        // given (주문 Map 객체 생성)
+        Map<Long, Integer> orderMap = new HashMap<>();
+        orderMap.put(1L, 2);
+//        orderMap.put(2L, 1);
+//        orderMap.put(3L, 2);
+        // -> 주석 제외하고 돌려보기
+        // Exception 발생 : 이미 첫 번째 책에서 예외 처리 발생 -> 따라서 뒤에 것들은 필요 없는 것임 (불필요한 mock)
+
+        // 페이 생성하고 충분한 금액으로 충전
         Pay myPay1 = createPay(user, "My_Pay_1");
         myPay1.charge(100000);
 
-        Map<Long, Integer> orderMap = new HashMap<>();
-        orderMap.put(1L, 2);
-        // orderMap.put(2L, 1);
-        // orderMap.put(3L, 2);
-        // -> 이유 : 이미 첫 번째에 걸렸으니까 뒤에 것들은 필요 없는 것임 (불필요한 mock)
-
+        // 서비스 코드 메서드 내에 필요한 stub 정의
         Mockito.when(payRepository.findById(1L)).thenReturn(Optional.of(myPay1));
         Mockito.when(bookRepository.findById(1L)).thenReturn(Optional.of(testBooks.get(0)));
 
-        // then
+        // then (책의 재고가 부족한 경우 예외 발생)
         assertThrows(RuntimeException.class, () -> bookService.buy(1L, orderMap));
     }
-
 
     private User createUser(String name, String nickname) {
         return User.builder()
